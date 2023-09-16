@@ -102,44 +102,47 @@ def movie_downloader(index):
                     print("invalid input")
                     browser.close()
                     
-def series_downloader(index, season_number, loop):
+def series_downloader(index, season_number, episode_number, loop:bool):
     rq = requests.get(f"{series_url}{index}-xxxx").content
     split_rq = rq.splitlines()
     link_tag = split_rq[8].split()
     link_str = link_tag[2].decode()
+    print(link_str)
+    print("Extracting ")
     if link_str.startswith("href"):
         link = link_str.replace('"', "").replace("href=", " ")
         print(link)
-        with sync_playwright() as p:
-            browser = p.chromium.launch()
-            page = browser.new_page()
+        if season_number.isdigit():
+            with sync_playwright() as p:
+                browser = p.chromium.launch(headless=False)
+                page = browser.new_page()
 
-            page.goto(link)
-            button = page.locator("#dbo-dl-1")
-            button.evaluate('(element) => element.click()')
+                page.goto(f"{link}/season-{season_number}")
+                button = page.locator(".anchor")
+                print(button.all_inner_texts())
 
-            page.wait_for_load_state("networkidle", timeout=120000)
+                page.wait_for_load_state("networkidle", timeout=120000)
 
 def download(code, type):
     try:
         if type == "movies" or int(type) == 0:
             movie_downloader(code)
         else:
-            print(f"{code} is invalid")
+            print(f"{code} is not the code for movies")
         if type == "series" or int(type) == 1:
            season_question = input("Season? - ")
-           episode_question = input("Episode? -")
-           question_series = input("Do you want to download the whole season Y/n-")
+           episode_question = input("Episode? - ")
+           question_series = input("Do you want to download the whole season Y/n - ")
            if question_series.lower() == "y":
-                if int(season_question):
-                    series_downloader(code, season_question, episode_question, question_series.lower())
+                if season_question.isdigit():
+                    series_downloader(code, season_question, episode_question, True)
                 else:
-                    series_downloader(code, season_question, episode_question, question_series.lower())
+                    series_downloader(code, 0, episode_question, False)
            elif question_series.lower() == "n":
-                if int(season_question):
-                    series_downloader(code, season_question, episode_question)
+                if season_question.isdigit():
+                    series_downloader(code, season_question, episode_question, False)
                 else:
-                    series_downloader(code, season_question, episode_question)
+                    series_downloader(code, 0, episode_question, False)
                             
 
     except requests.exceptions.ConnectionError:
@@ -147,4 +150,4 @@ def download(code, type):
     except playwright._impl._api_types.TimeoutError or _asyncio.execptions.InvalidStateError:
         print(red(f"Sorry network issues: time out for {code} after 12s"))
 
-download(3820, 0)
+download(14209, 1)
