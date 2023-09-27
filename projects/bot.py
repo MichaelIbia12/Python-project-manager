@@ -9,7 +9,7 @@ url = "https://graph.facebook.com/v17.0/127614807105987/messages"
 
 @app.route("/webhook", methods=["POST"])
 def handle_incoming_message():
-    data = request.get_json()
+    data = requests.get_json()
     if "messages" in data:
         for message in data["messages"]:
             text = message["message"]["content"]
